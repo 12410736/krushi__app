@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Plant Doctor - AI Disease Detector</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest"></script>
+    <style>
+      body { font-family: Arial; text-align: center; background-color: #f0f9f0; }
+      video, canvas { border: 2px solid green; border-radius: 10px; }
+    </style>
+  </head>
+  <body>
+    <h1>🌿 Plant Doctor AI</h1>
+    <button onclick="init()">Start Camera</button>
+    <div><video id="webcam" width="300" height="225" autoplay muted></video></div>
+    <div><h3 id="label-container">Prediction will appear here</h3></div>
+
+    <script type="text/javascript">
+      const URL = "https://teachablemachine.withgoogle.com/models/TRIQZn-wM/";
+
+      let model, webcam, labelContainer, maxPredictions;
+
+      async function init() {
+        const modelURL = URL + "model.json";
+        const metadataURL = URL + "metadata.json";
+
+        model = await tmImage.load(modelURL, metadataURL);
+        maxPredictions = model.getTotalClasses();
+
+        const flip = true;
+        webcam = new tmImage.Webcam(300, 225, flip);
+        await webcam.setup();
+        await webcam.play();
+        window.requestAnimationFrame(loop);
+
+        document.getElementById("webcam").replaceWith(webcam.canvas);
+        labelContainer = document.getElementById("label-container");
+      }
+
+      async function loop() {
+        webcam.update();
+        await predict();
+        window.requestAnimationFrame(loop);
+      }
+
+      async function predict() {
+        const prediction = await model.predict(webcam.canvas);
+        prediction.sort((a, b) => b.probability - a.probability);
+        const result = prediction[0];
+        labelContainer.innerHTML = `🔍 Detected: <b>${result.className}</b> (${(result.probability * 100).toFixed(2)}%)`;
+      }
+    </script>
+  </body>
+</html>
